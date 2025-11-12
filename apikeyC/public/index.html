@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Generator Interaktif</title>
+    <style>
+        /* Mengatur dasar layout agar lebih konsisten */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: grid;
+            place-items: center;
+            min-height: 100vh; /* Memenuhi tinggi layar */
+            color: #ffffff;
+            
+            /* --- EFEK INTERAKTIF: Latar belakang gradasi animasi --- */
+            background: linear-gradient(45deg, #4e54c8, #8f94fb, #4e54c8, #2c3e50);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        /* Animasi untuk latar belakang */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            /* Tampilan 'glassmorphism' agar kontras dengan background */
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 600px; /* Batas lebar maksimum */
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* Tombol utama (Generate) */
+        #generateBtn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background-color: #28a745; /* Warna hijau */
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Transisi untuk efek interaktif */
+            margin-bottom: 1.5rem;
+            display: block;
+            width: 100%;
+        }
+
+        /* --- EFEK INTERAKTIF: Tombol Generate --- */
+        #generateBtn:hover {
+            background-color: #218838; /* Lebih gelap saat disentuh */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px); /* Sedikit terangkat */
+        }
+        #generateBtn:active {
+            transform: translateY(0) scale(0.98); /* Efek ditekan */
+            box-shadow: none;
+        }
+
+
+        .key-display {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        /* --- PERUBAHAN UTAMA: Bar Hasil (Textarea) --- */
+        #apiKey {
+            /* Diubah dari <input> ke <textarea> agar bisa lebih besar */
+            flex-grow: 1;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2rem; /* Font lebih besar */
+            font-weight: bold;
+            background-color: #fafafa;
+            color: #333;
+            resize: none; /* Mencegah user mengubah ukuran */
+            line-height: 1.5; /* Jarak antar baris (jika key-nya wrap) */
+            min-height: 80px; /* Memberi tinggi minimal */
+        }
+
+        /* Tombol 'Copy' */
+        #copyBtn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            background-color: #007bff; /* Warna biru */
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        /* --- EFEK INTERAKTIF: Tombol Copy --- */
+        #copyBtn:hover {
+            background-color: #0056b3;
+        }
+
+        #copyMessage {
+            font-size: 0.9rem;
+            color: #d4edda; /* Warna hijau muda untuk pesan sukses */
+            height: 1.2em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>API Key Generator</h2>
+        
+        <button id="generateBtn">Generate New Key</button>
+        
+        <div class="key-display">
+            <textarea id="apiKey" readonly rows="3" placeholder="Klik 'Generate' untuk membuat key..."></textarea>
+            <button id="copyBtn">Copy</button>
+        </div>
+        
+        <p id="copyMessage"></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const generateBtn = document.getElementById('generateBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const apiKeyInput = document.getElementById('apiKey');
+            const copyMessage = document.getElementById('copyMessage');
+            
+            // (MODIFIKASI) Fungsi generateBtn sekarang memanggil server
+            generateBtn.addEventListener('click', () => {
+                // Tampilkan status loading (opsional)
+                apiKeyInput.value = 'Generating key di server...';
+                copyMessage.textContent = ''; 
+
+                // Panggil API /generate-key di server kita
+                fetch('/generate-key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Tampilkan key yang diterima dari server
+                        apiKeyInput.value = data.apiKey;
+                    } else {
+                        apiKeyInput.value = 'Gagal mengambil key.';
+                        copyMessage.textContent = data.message || 'Error.';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching new key:', err);
+                    apiKeyInput.value = 'Error! Cek console server.';
+                    copyMessage.textContent = 'Gagal terhubung ke server.';
+                });
+            });
+
+            // Fungsi copyBtn tetap sama, tidak perlu diubah
+            copyBtn.addEventListener('click', () => {
+                const keyToCopy = apiKeyInput.value;
+                
+                if (!keyToCopy || keyToCopy.startsWith('Generating...')) {
+                    copyMessage.textContent = 'Tidak ada key untuk disalin!';
+                    setTimeout(() => { copyMessage.textContent = ''; }, 2000);
+                    return;
+                }
+
+                navigator.clipboard.writeText(keyToCopy).then(() => {
+                    copyMessage.textContent = 'Key berhasil disalin!';
+                    setTimeout(() => {
+                        copyMessage.textContent = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Gagal menyalin ke clipboard: ', err);
+                    copyMessage.textContent = 'Gagal menyalin!';
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
