@@ -139,6 +139,71 @@
         <p id="copyMessage"></p>
     </div>
 
-    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const generateBtn = document.getElementById('generateBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const apiKeyInput = document.getElementById('apiKey');
+            const copyMessage = document.getElementById('copyMessage');
+            
+            // (MODIFIKASI) Fungsi generateBtn sekarang memanggil server
+            generateBtn.addEventListener('click', () => {
+                // Tampilkan status loading (opsional)
+                apiKeyInput.value = 'Generating key di server...';
+                copyMessage.textContent = ''; 
+
+                // Panggil API /generate-key di server kita
+                fetch('/generate-key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Tampilkan key yang diterima dari server
+                        apiKeyInput.value = data.apiKey;
+                    } else {
+                        apiKeyInput.value = 'Gagal mengambil key.';
+                        copyMessage.textContent = data.message || 'Error.';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching new key:', err);
+                    apiKeyInput.value = 'Error! Cek console server.';
+                    copyMessage.textContent = 'Gagal terhubung ke server.';
+                });
+            });
+
+            // Fungsi copyBtn tetap sama, tidak perlu diubah
+            copyBtn.addEventListener('click', () => {
+                const keyToCopy = apiKeyInput.value;
+                
+                if (!keyToCopy || keyToCopy.startsWith('Generating...')) {
+                    copyMessage.textContent = 'Tidak ada key untuk disalin!';
+                    setTimeout(() => { copyMessage.textContent = ''; }, 2000);
+                    return;
+                }
+
+                navigator.clipboard.writeText(keyToCopy).then(() => {
+                    copyMessage.textContent = 'Key berhasil disalin!';
+                    setTimeout(() => {
+                        copyMessage.textContent = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Gagal menyalin ke clipboard: ', err);
+                    copyMessage.textContent = 'Gagal menyalin!';
+                });
+            });
+
+        });
+    </script>
 </body>
 </html>
